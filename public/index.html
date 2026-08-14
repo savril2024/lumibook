@@ -1,0 +1,2155 @@
+<!DOCTYPE html>
+<!--
+╔══════════════════════════════════════════════════════════════════════╗
+║   🚀 GUÍA DE DESPLIEGUE EN RENDER (para el equipo)                     ║
+╠══════════════════════════════════════════════════════════════════════╣
+║                                                                        ║
+║  OPCIÓN A — Static Site (la más fácil, ideal para este index.html):    ║
+║   1. Sube el proyecto a GitHub:                                        ║
+║        git init && git add . && git commit -m "LumiBook v2"            ║
+║        git remote add origin https://github.com/TU_USUARIO/lumibook    ║
+║        git push -u origin main                                         ║
+║   2. En render.com → New + → "Static Site"                             ║
+║   3. Conecta tu repo de GitHub                                         ║
+║   4. Build Command: (vacío) · Publish Directory: . (o /public)         ║
+║   5. Create Static Site → listo: https://lumibook.onrender.com         ║
+║   ✅ HTTPS automático · deploy automático en cada push                 ║
+║                                                                        ║
+║  OPCIÓN B — Web Service con Docker (si ya tienen su Dockerfile nginx): ║
+║   1. Render → New + → "Web Service" → conectar repo                    ║
+║   2. Environment: Docker · Root Directory: /                           ║
+║   3. Plan: Free/Start · el Dockerfile expone el puerto 80              ║
+║   4. Render detecta el Dockerfile y construye la imagen                ║
+║                                                                        ║
+║  RECOMENDADO: render.yaml en la raíz del repo (Infrastructure as Code) ║
+║   ver el bloque RENDER.YAML más abajo                                  ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+  📄 render.yaml (crear en la raíz del repositorio):
+  ─────────────────────────────────────────────────
+  services:
+    - type: web
+      name: lumibook
+      runtime: static
+      staticPublishPath: .
+      headers:
+        - path: /*
+          name: Cache-Control
+          value: no-cache
+      routes:
+        - type: rewrite
+          source: /*
+          destination: /index.html
+
+  🆕 NOVEDADES DE ESTA VERSIÓN:
+   • Taller "Crear": mamá/hija crean sus propios cuentos y juegos en
+     español → Lumi los lee en español y los repite en inglés.
+   • Los cuentos creados entran automáticamente al "Reto" (quiz).
+   • Reto fonético con el avatar (corrección lenta + modo mamá).
+   • Exportar/Importar creaciones (respaldo familiar).
+   • Página "Guía" con recomendaciones pedagógicas y técnicas.
+-->
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>LumiBook ✨ · Inglés–Español con mamá</title>
+  <!-- PWA Icons -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ff6f91">
+
+  <!-- iOS -->
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="LumiBook">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+
+  <!-- Meta tags para compartir -->
+  <meta property="og:title" content="LumiBook · Inglés-Español con mamá">
+  <meta property="og:description" content="Juego bilingüe para que mamás y sus hijas/os aprendan inglés jugando">
+  <meta property="og:image" content="https://lumibook.onrender.com/icons/icon-512.png">
+  <meta property="og:url" content="https://lumibook.onrender.com">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/fredoka@5.0.0/400.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/fredoka@5.0.0/500.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/fredoka@5.0.0/600.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/fredoka@5.0.0/700.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/nunito@5.0.0/600.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/nunito@5.0.0/800.css">
+  <style>
+    :root {
+      --coral: #ff6f91;
+      --coral2: #ff8fab;
+      --sun: #ffc75f;
+      --mint: #2ec4b6;
+      --sky: #4cc9f0;
+      --grape: #9b5de5;
+      --ink: #3d3660;
+      --ink-soft: #7a739c;
+      --cream: #fff8f2;
+      --card: #ffffff;
+      --shadow: 0 18px 40px rgba(255, 111, 145, .14), 0 6px 16px rgba(61, 54, 96, .08);
+      --r-lg: 28px;
+      --r-md: 20px;
+      --r-sm: 14px;
+      --font-display: 'Fredoka', system-ui, sans-serif;
+      --font-body: 'Nunito', system-ui, sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    html,
+    body {
+      height: 100%
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--ink);
+      overflow-x: hidden;
+      background: linear-gradient(160deg, #ffe9f1 0%, #fff6e8 45%, #e3f7ff 100%);
+      min-height: 100vh;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(70px);
+      z-index: 0;
+      pointer-events: none;
+      opacity: .5
+    }
+
+    body::before {
+      width: 46vw;
+      height: 46vw;
+      background: #ffd6e6;
+      top: -14vw;
+      left: -12vw
+    }
+
+    body::after {
+      width: 40vw;
+      height: 40vw;
+      background: #c9f0ff;
+      bottom: -12vw;
+      right: -10vw
+    }
+
+    img {
+      display: block;
+      max-width: 100%
+    }
+
+    button {
+      font-family: var(--font-display);
+      cursor: pointer;
+      border: none
+    }
+
+    input,
+    textarea {
+      font-family: var(--font-body)
+    }
+
+    #startOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(160deg, #ffdfec, #fff3dd 50%, #d9f3ff);
+      padding: 20px
+    }
+
+    .start-card {
+      background: var(--card);
+      border-radius: 36px;
+      box-shadow: var(--shadow);
+      max-width: 560px;
+      width: 100%;
+      padding: 34px 28px;
+      text-align: center;
+      animation: floatIn .7s cubic-bezier(.2, 1.4, .4, 1)
+    }
+
+    .start-card .logo {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(2rem, 6vw, 2.8rem);
+      background: linear-gradient(90deg, var(--coral), var(--grape), var(--sky));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent
+    }
+
+    .start-card p {
+      color: var(--ink-soft);
+      font-weight: 600;
+      margin: 10px 0 18px;
+      font-size: 1.02rem
+    }
+
+    .start-card img {
+      border-radius: 24px;
+      margin: 0 auto 22px;
+      box-shadow: var(--shadow);
+      max-height: 240px;
+      object-fit: cover;
+      width: 100%
+    }
+
+    #startBtn {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+      padding: 16px 42px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--coral), var(--grape));
+      box-shadow: 0 12px 28px rgba(155, 93, 229, .35);
+      transition: transform .18s;
+      animation: pulseBtn 1.6s infinite
+    }
+
+    #startBtn:active {
+      transform: scale(.94)
+    }
+
+    @keyframes pulseBtn {
+
+      0%,
+      100% {
+        transform: scale(1)
+      }
+
+      50% {
+        transform: scale(1.05)
+      }
+    }
+
+    @keyframes floatIn {
+      from {
+        opacity: 0;
+        transform: translateY(40px) scale(.9)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 14px 16px 160px
+    }
+
+    .topbar {
+      position: sticky;
+      top: 10px;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, .75);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 999px;
+      padding: 10px 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px
+    }
+
+    .brand {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.35rem;
+      background: linear-gradient(90deg, var(--coral), var(--grape));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      white-space: nowrap
+    }
+
+    .stars {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #fff6da;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      color: #b07900;
+      font-size: 1.05rem;
+      box-shadow: inset 0 0 0 2px #ffe3a1
+    }
+
+    .stars.pop {
+      animation: starPop .5s
+    }
+
+    @keyframes starPop {
+      40% {
+        transform: scale(1.35) rotate(8deg)
+      }
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 8px
+    }
+
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #fff;
+      font-size: 1.2rem;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 4px 12px rgba(61, 54, 96, .12);
+      transition: transform .15s, opacity .2s
+    }
+
+    .icon-btn:active {
+      transform: scale(.9)
+    }
+
+    .icon-btn.off {
+      opacity: .4;
+      filter: grayscale(1)
+    }
+
+    .chipnav {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 2px 12px;
+      scrollbar-width: none
+    }
+
+    .chipnav::-webkit-scrollbar {
+      display: none
+    }
+
+    .chip {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: #fff;
+      font-weight: 600;
+      font-size: .95rem;
+      color: var(--ink-soft);
+      box-shadow: 0 4px 12px rgba(61, 54, 96, .08);
+      transition: all .2s
+    }
+
+    .chip:active {
+      transform: scale(.94)
+    }
+
+    .chip.active {
+      background: linear-gradient(135deg, var(--coral), var(--grape));
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(255, 111, 145, .35)
+    }
+
+    .chip.special {
+      background: linear-gradient(135deg, #fff3dd, #ffe3ec);
+      color: #c77800;
+      box-shadow: 0 4px 12px rgba(255, 199, 95, .35)
+    }
+
+    .chip.special.active {
+      background: linear-gradient(135deg, var(--sun), var(--coral));
+      color: #fff
+    }
+
+    .page {
+      display: none
+    }
+
+    .page.active {
+      display: block;
+      animation: pageIn .5s cubic-bezier(.2, 1.2, .4, 1)
+    }
+
+    @keyframes pageIn {
+      from {
+        opacity: 0;
+        transform: translateY(26px) scale(.98)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow);
+      padding: clamp(18px, 3.5vw, 32px);
+      margin-bottom: 18px
+    }
+
+    .page-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      margin-bottom: 6px
+    }
+
+    .page-sub {
+      color: var(--ink-soft);
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-size: clamp(.95rem, 2.4vw, 1.08rem)
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 22px;
+      align-items: center
+    }
+
+    .hero-grid img {
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      width: 100%;
+      object-fit: cover;
+      max-height: 340px
+    }
+
+    @media(max-width:820px) {
+      .hero-grid {
+        grid-template-columns: 1fr
+      }
+    }
+
+    .tile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+      gap: 12px
+    }
+
+    .tile {
+      background: linear-gradient(180deg, #fff, #fff4f8);
+      border-radius: var(--r-md);
+      padding: 14px 8px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-align: center;
+      box-shadow: 0 6px 16px rgba(61, 54, 96, .1);
+      transition: transform .16s;
+      position: relative
+    }
+
+    .tile:active {
+      transform: scale(.92)
+    }
+
+    .tile .emo {
+      font-size: 2.5rem;
+      line-height: 1.1;
+      filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .12))
+    }
+
+    .tile .t-en {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--ink)
+    }
+
+    .tile .t-es {
+      font-weight: 600;
+      font-size: .82rem;
+      color: var(--ink-soft)
+    }
+
+    .tile .mic {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #eef7ff;
+      font-size: .95rem;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 2px 6px rgba(61, 54, 96, .15)
+    }
+
+    .tile.correct {
+      animation: bounceOk .6s;
+      background: linear-gradient(180deg, #e7fff6, #c9f7e8)
+    }
+
+    .tile.wrong {
+      animation: shakeNo .5s;
+      background: linear-gradient(180deg, #fff0f0, #ffe1e1)
+    }
+
+    @keyframes bounceOk {
+
+      0%,
+      100% {
+        transform: scale(1)
+      }
+
+      40% {
+        transform: scale(1.15) rotate(3deg)
+      }
+
+      70% {
+        transform: scale(.97)
+      }
+    }
+
+    @keyframes shakeNo {
+
+      0%,
+      100% {
+        transform: translateX(0)
+      }
+
+      20%,
+      60% {
+        transform: translateX(-7px)
+      }
+
+      40%,
+      80% {
+        transform: translateX(7px)
+      }
+    }
+
+    .alpha-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+      gap: 10px
+    }
+
+    .alpha {
+      border-radius: var(--r-sm);
+      padding: 12px 0;
+      text-align: center;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: #fff;
+      box-shadow: 0 6px 14px rgba(61, 54, 96, .16);
+      transition: transform .15s
+    }
+
+    .alpha:active {
+      transform: scale(.9)
+    }
+
+    /* ===== TALLER CREAR ===== */
+    .story-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px
+    }
+
+    .emoji-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px
+    }
+
+    .emo-pick {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: #f6f2ff;
+      font-size: 1.5rem;
+      display: grid;
+      place-items: center;
+      transition: transform .15s;
+      box-shadow: 0 3px 8px rgba(61, 54, 96, .1)
+    }
+
+    .emo-pick:active {
+      transform: scale(.88)
+    }
+
+    .emo-pick.sel {
+      background: linear-gradient(135deg, var(--sun), var(--coral));
+      transform: scale(1.15);
+      box-shadow: 0 6px 14px rgba(255, 199, 95, .5)
+    }
+
+    .field label {
+      display: block;
+      font-weight: 800;
+      color: var(--ink-soft);
+      font-size: .85rem;
+      margin-bottom: 5px
+    }
+
+    .field input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 3px solid #eee6f7;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--ink);
+      outline: none;
+      background: #fdfcff;
+      transition: border .2s
+    }
+
+    .field input:focus {
+      border-color: var(--sky)
+    }
+
+    .form-btns {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap
+    }
+
+    .story-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px
+    }
+
+    .story-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: linear-gradient(135deg, #fffdf5, #fff3f8);
+      border-radius: var(--r-md);
+      padding: 14px 16px;
+      box-shadow: 0 6px 16px rgba(61, 54, 96, .08);
+      flex-wrap: wrap
+    }
+
+    .story-card .s-emo {
+      font-size: 2.2rem;
+      flex: 0 0 auto
+    }
+
+    .story-card .s-texts {
+      flex: 1 1 160px;
+      min-width: 140px
+    }
+
+    .story-card .s-es {
+      font-weight: 800;
+      font-size: 1.02rem;
+      display: block
+    }
+
+    .story-card .s-en {
+      font-weight: 700;
+      font-size: .9rem;
+      color: var(--grape);
+      display: block;
+      font-style: italic
+    }
+
+    .story-card .s-en.empty {
+      color: #c9c2dd;
+      font-style: normal
+    }
+
+    .s-actions {
+      display: flex;
+      gap: 8px
+    }
+
+    .mini-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: #fff;
+      font-size: 1.15rem;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 3px 8px rgba(61, 54, 96, .12);
+      transition: transform .15s
+    }
+
+    .mini-btn:active {
+      transform: scale(.88)
+    }
+
+    .empty-msg {
+      text-align: center;
+      color: var(--ink-soft);
+      font-weight: 700;
+      padding: 26px 10px;
+      background: #faf7ff;
+      border-radius: var(--r-md);
+      border: 2px dashed #e6dcf5
+    }
+
+    /* ===== PINTAR ===== */
+    .paint-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 14px
+    }
+
+    .palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px
+    }
+
+    .pal {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 4px solid #fff;
+      box-shadow: 0 4px 12px rgba(61, 54, 96, .2);
+      transition: transform .15s;
+      position: relative
+    }
+
+    .pal:active {
+      transform: scale(.88)
+    }
+
+    .pal.sel {
+      transform: scale(1.18);
+      box-shadow: 0 0 0 4px var(--grape), 0 6px 14px rgba(155, 93, 229, .4)
+    }
+
+    .pal.sel::after {
+      content: "✓";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 800;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, .5)
+    }
+
+    .btn {
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 12px 20px;
+      border-radius: 999px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--sky), var(--mint));
+      box-shadow: 0 8px 18px rgba(46, 196, 182, .3);
+      transition: transform .15s
+    }
+
+    .btn:active {
+      transform: scale(.93)
+    }
+
+    .btn.warm {
+      background: linear-gradient(135deg, var(--coral), var(--sun));
+      box-shadow: 0 8px 18px rgba(255, 111, 145, .3)
+    }
+
+    .btn.small {
+      padding: 9px 16px;
+      font-size: .92rem
+    }
+
+    .switch-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      color: var(--ink-soft);
+      font-size: .9rem
+    }
+
+    .switch {
+      position: relative;
+      width: 52px;
+      height: 30px
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0
+    }
+
+    .slider {
+      position: absolute;
+      inset: 0;
+      background: #dcd7ee;
+      border-radius: 999px;
+      transition: .25s
+    }
+
+    .slider::before {
+      content: "";
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      left: 3px;
+      top: 3px;
+      border-radius: 50%;
+      background: #fff;
+      transition: .25s;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .2)
+    }
+
+    .switch input:checked+.slider {
+      background: var(--mint)
+    }
+
+    .switch input:checked+.slider::before {
+      transform: translateX(22px)
+    }
+
+    .canvas-wrap {
+      border-radius: var(--r-md);
+      overflow: hidden;
+      box-shadow: inset 0 0 0 3px #ffe1ec, var(--shadow);
+      background: #fff;
+      height: clamp(260px, 48vw, 440px);
+      position: relative
+    }
+
+    #drawCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: crosshair;
+      display: block
+    }
+
+    .paint-hint {
+      margin-top: 12px;
+      background: #f2fbff;
+      border-radius: var(--r-sm);
+      padding: 12px 16px;
+      font-weight: 700;
+      color: #22769b;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font-size: .98rem
+    }
+
+    /* ===== GUÍA ===== */
+    .tip-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px
+    }
+
+    .tip {
+      background: linear-gradient(180deg, #fff, #f7fbff);
+      border-radius: var(--r-md);
+      padding: 18px;
+      box-shadow: 0 6px 16px rgba(61, 54, 96, .08);
+      font-weight: 600;
+      color: var(--ink-soft)
+    }
+
+    .tip b {
+      display: block;
+      color: var(--ink);
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      margin-bottom: 6px
+    }
+
+    /* ===== AVATAR ===== */
+    .avatar-dock {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 70;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      pointer-events: none
+    }
+
+    .bubble {
+      max-width: 280px;
+      background: #fff;
+      border-radius: 20px 20px 4px 20px;
+      padding: 12px 16px;
+      font-weight: 800;
+      font-size: .98rem;
+      color: var(--ink);
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: scale(.7) translateY(10px);
+      transform-origin: bottom right;
+      transition: all .3s cubic-bezier(.2, 1.4, .4, 1)
+    }
+
+    .bubble.show {
+      opacity: 1;
+      transform: none
+    }
+
+    .bubble .big-word {
+      display: block;
+      font-family: var(--font-display);
+      font-size: clamp(1.05rem, 3vw, 1.4rem);
+      color: var(--grape);
+      letter-spacing: 1px;
+      margin-top: 4px;
+      word-break: break-word
+    }
+
+    .avatar {
+      width: 128px;
+      height: 128px;
+      pointer-events: auto;
+      filter: drop-shadow(0 10px 18px rgba(76, 201, 240, .35))
+    }
+
+    .av-name {
+      position: absolute;
+      bottom: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      border-radius: 999px;
+      padding: 2px 12px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: .8rem;
+      color: var(--sky);
+      box-shadow: 0 4px 10px rgba(61, 54, 96, .15);
+      white-space: nowrap
+    }
+
+    .avatar-dock .holder {
+      position: relative
+    }
+
+    .av-body-g {
+      transform-origin: 100px 110px;
+      animation: floaty 3.2s ease-in-out infinite
+    }
+
+    @keyframes floaty {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-7px)
+      }
+    }
+
+    .av-ring {
+      fill: none;
+      stroke: var(--sky);
+      stroke-width: 5;
+      opacity: 0;
+      transform-origin: 100px 100px
+    }
+
+    .st-listen .av-ring {
+      animation: ringPulse 1.2s ease-out infinite
+    }
+
+    @keyframes ringPulse {
+      0% {
+        opacity: .8;
+        transform: scale(.8)
+      }
+
+      100% {
+        opacity: 0;
+        transform: scale(1.25)
+      }
+    }
+
+    .av-eyes-happy,
+    .m-talk,
+    .m-big {
+      display: none
+    }
+
+    .st-happy .av-eyes-open {
+      display: none
+    }
+
+    .st-happy .av-eyes-happy {
+      display: block
+    }
+
+    .st-happy .av-body-g {
+      animation: jump .5s ease-in-out infinite
+    }
+
+    @keyframes jump {
+
+      0%,
+      100% {
+        transform: translateY(0) rotate(-3deg)
+      }
+
+      50% {
+        transform: translateY(-14px) rotate(3deg)
+      }
+    }
+
+    .st-happy .m-big {
+      display: block
+    }
+
+    .st-happy .arm-l {
+      animation: clapL .35s ease-in-out infinite alternate;
+      transform-origin: 52px 128px
+    }
+
+    .st-happy .arm-r {
+      animation: clapR .35s ease-in-out infinite alternate;
+      transform-origin: 148px 128px
+    }
+
+    @keyframes clapL {
+      from {
+        transform: rotate(14deg)
+      }
+
+      to {
+        transform: rotate(-16deg)
+      }
+    }
+
+    @keyframes clapR {
+      from {
+        transform: rotate(-14deg)
+      }
+
+      to {
+        transform: rotate(16deg)
+      }
+    }
+
+    .st-talk .m-talk {
+      display: block;
+      animation: talk .28s ease-in-out infinite
+    }
+
+    .st-slow .m-talk {
+      display: block;
+      animation: talkSlow 1s ease-in-out infinite
+    }
+
+    @keyframes talk {
+
+      0%,
+      100% {
+        transform: scaleY(.4)
+      }
+
+      50% {
+        transform: scaleY(1)
+      }
+    }
+
+    @keyframes talkSlow {
+
+      0%,
+      100% {
+        transform: scale(.5)
+      }
+
+      35% {
+        transform: scale(1.25, 1.5)
+      }
+
+      70% {
+        transform: scale(.9, .7)
+      }
+    }
+
+    .m-talk {
+      transform-origin: 100px 130px
+    }
+
+    .st-enc .av-body-g {
+      animation: tilt 1.6s ease-in-out infinite
+    }
+
+    @keyframes tilt {
+
+      0%,
+      100% {
+        transform: rotate(-4deg)
+      }
+
+      50% {
+        transform: rotate(4deg)
+      }
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(61, 54, 96, .4);
+      backdrop-filter: blur(6px);
+      padding: 20px
+    }
+
+    .modal.show {
+      display: flex
+    }
+
+    .modal-card {
+      background: #fff;
+      border-radius: 30px;
+      padding: 28px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: var(--shadow);
+      animation: floatIn .4s cubic-bezier(.2, 1.4, .4, 1)
+    }
+
+    .modal-card h3 {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      margin-bottom: 6px
+    }
+
+    .modal-card p {
+      color: var(--ink-soft);
+      font-weight: 700;
+      margin-bottom: 20px
+    }
+
+    .modal-btns {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap
+    }
+
+    .modal-btns .btn {
+      font-size: 1.1rem;
+      padding: 14px 24px
+    }
+
+    #fxCanvas {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      pointer-events: none
+    }
+
+    @media(min-width:900px) {
+      .avatar-dock {
+        right: 28px;
+        bottom: 28px
+      }
+
+      .avatar {
+        width: 150px;
+        height: 150px
+      }
+
+      .bubble {
+        max-width: 320px;
+        font-size: 1.05rem
+      }
+    }
+
+    @media(max-width:560px) {
+      .app {
+        padding: 10px 10px 160px
+      }
+
+      .brand {
+        font-size: 1.1rem
+      }
+
+      .avatar {
+        width: 104px;
+        height: 104px
+      }
+
+      .tile-grid {
+        grid-template-columns: repeat(auto-fill, minmax(88px, 1fr))
+      }
+
+      .pal {
+        width: 46px;
+        height: 46px
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="startOverlay">
+    <div class="start-card">
+      <div class="logo">✨ LumiBook</div>
+      <p>Inglés y Español · Un juego para mamá y su peque 💕<br>
+        <i>English & Spanish · A game for mom & little ones</i>
+      </p>
+      <img
+        src="https://image.qwenlm.ai/public_source/485c3eca-778f-4e94-97e3-bf4a0aa0f465/1d111c19c-97d8-470e-95a3-cdfddbb2c301.png"
+        alt="Mamá e hija jugando con bloques de letras">
+      <button id="startBtn">▶ ¡A jugar con mamá!</button>
+    </div>
+  </div>
+
+  <canvas id="fxCanvas"></canvas>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">✨ LumiBook</div>
+      <div class="stars" id="starBox">⭐ <b id="starCount">0</b></div>
+      <div class="top-actions">
+        <button class="icon-btn" id="musicBtn" title="Música / Music">🎵</button>
+        <button class="icon-btn" id="sfxBtn" title="Sonidos / Sounds">🔔</button>
+      </div>
+    </header>
+
+    <nav class="chipnav" id="chipNav"></nav>
+
+    <main id="stage">
+      <!-- INICIO -->
+      <section class="page" data-page="home">
+        <div class="card hero-grid">
+          <div>
+            <div class="page-title">¡Hola! Somos mamá y yo 💕<br><span style="color:var(--sky)">Hi! Mom and me!</span>
+            </div>
+            <p class="page-sub">Toca, escucha a <b>Lumi</b> 🤖, repite en inglés con el micro 🎤 y gana estrellas ⭐.<br>
+              ¡Ahora también pueden <b>crear sus propios cuentos</b> en el taller ✏️!<br>
+              <i>Tap, listen, repeat in English and win stars!</i>
+            </p>
+            <button class="btn warm" id="goFirst">🌈 ¡Empezar! · Let's go!</button>
+            <button class="btn" id="goCrear">✏️ Crear un cuento</button>
+          </div>
+          <img
+            src="https://image.qwenlm.ai/public_source/485c3eca-778f-4e94-97e3-bf4a0aa0f465/1d111c19c-97d8-470e-95a3-cdfddbb2c301.png"
+            alt="Mamá e hija jugando">
+        </div>
+      </section>
+
+      <!-- ABECEDARIO -->
+      <section class="page" data-page="abc">
+        <div class="card">
+          <div class="page-title">🔤 El Abecedario · <span style="color:var(--grape)">The Alphabet</span></div>
+          <p class="page-sub">Toca una letra para oírla en español e inglés · <i>Tap a letter to hear it!</i></p>
+          <div class="alpha-grid" id="alphaGrid"></div>
+        </div>
+      </section>
+
+      <!-- COLORES -->
+      <section class="page" data-page="colors">
+        <div class="card">
+          <div class="page-title">🌈 Colores · <span style="color:var(--coral)">Colors</span></div>
+          <p class="page-sub">Toca para escuchar · 🎤 para el reto de decirlo en inglés con mamá</p>
+          <div class="tile-grid" id="colorGrid"></div>
+        </div>
+      </section>
+
+      <!-- PINTAR -->
+      <section class="page" data-page="paint">
+        <div class="card">
+          <div class="page-title">🎨 Pintar Juntas · <span style="color:var(--mint)">Paint Together</span></div>
+          <p class="page-sub">Elige un color… ¡pero primero dilo en inglés! 🎤 <i>Say the color in English to unlock
+              it!</i></p>
+          <div class="paint-tools">
+            <div class="palette" id="paintPalette"></div>
+          </div>
+          <div class="paint-tools">
+            <button class="btn small" id="brushThin">✏️ Fino</button>
+            <button class="btn small" id="brushThick">🖌️ Grueso</button>
+            <button class="btn small warm" id="clearBtn">🧹 Limpiar</button>
+            <button class="btn small warm" id="saveBtn">💾 Guardar</button>
+            <label class="switch-wrap">👩‍👧 Modo libre
+              <span class="switch"><input type="checkbox" id="freeMode"><span class="slider"></span></span>
+            </label>
+          </div>
+          <div class="canvas-wrap"><canvas id="drawCanvas"></canvas></div>
+          <div class="paint-hint">🐢 Lumi te pedirá repetir el color en inglés antes de pintar. Si fallas, te lo dirá
+            despacito y con mamá lo intentan de nuevo 💪</div>
+        </div>
+        <div class="card hero-grid">
+          <img
+            src="https://image.qwenlm.ai/public_source/485c3eca-778f-4e94-97e3-bf4a0aa0f465/1a75b33ae-bbb2-4666-bc28-76087968e096.png"
+            alt="Mamá e hija pintando juntas">
+          <div>
+            <div class="page-title" style="font-size:1.4rem">Momentos que pintan recuerdos 🖌️</div>
+            <p class="page-sub">Pintar juntas refuerza la palabra en inglés con emoción y juego.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ANIMALES -->
+      <section class="page" data-page="animals">
+        <div class="card">
+          <div class="page-title">🐾 Animales · <span style="color:var(--sun)">Animals</span></div>
+          <p class="page-sub">Toca para escuchar · 🎤 reto en inglés</p>
+          <div class="tile-grid" id="animalGrid"></div>
+        </div>
+      </section>
+
+      <!-- NÚMEROS -->
+      <section class="page" data-page="numbers">
+        <div class="card">
+          <div class="page-title">🔢 Números · <span style="color:var(--sky)">Numbers</span></div>
+          <p class="page-sub">Cuenta con mamá del 1 al 10 · <i>Count with mommy!</i></p>
+          <div class="tile-grid" id="numberGrid"></div>
+        </div>
+      </section>
+
+      <!-- FAMILIA -->
+      <section class="page" data-page="family">
+        <div class="card">
+          <div class="page-title">👨👩‍ Mi Familia · <span style="color:var(--grape)">My Family</span></div>
+          <p class="page-sub">¿Quién es quién? ¡Dilo en los dos idiomas!</p>
+          <div class="tile-grid" id="familyGrid"></div>
+        </div>
+      </section>
+
+      <!-- COMIDA -->
+      <section class="page" data-page="food">
+        <div class="card">
+          <div class="page-title">🍎 Comida Yummy · <span style="color:var(--coral)">Yummy Food</span></div>
+          <p class="page-sub">Toca y repite con mamá · <i>Tap and repeat!</i></p>
+          <div class="tile-grid" id="foodGrid"></div>
+        </div>
+      </section>
+
+      <!-- FRASES -->
+      <section class="page" data-page="phrases">
+        <div class="card">
+          <div class="page-title">💬 Frases Mágicas · <span style="color:var(--mint)">Magic Phrases</span></div>
+          <p class="page-sub">Frases para usar hoy con mamá · <i>Use them today with mommy!</i></p>
+          <div class="tile-grid" id="phraseGrid"></div>
+        </div>
+      </section>
+
+      <!-- ✏️ TALLER CREAR (NUEVO) -->
+      <section class="page" data-page="crear">
+        <div class="card">
+          <div class="page-title">✏️ Nuestro Taller · <span style="color:var(--sun)">Our Workshop</span></div>
+          <p class="page-sub">Mamá y hija crean cuentos o palabras en español 💡 Lumi las leerá en español… ¡y las
+            repetirá en inglés! 🇺🇸</p>
+          <div class="story-form">
+            <div class="field">
+              <label>1 · Elige un dibujo para su cuento</label>
+              <div class="emoji-row" id="emojiRow"></div>
+            </div>
+            <div class="field">
+              <label>2 · Escríbelo en español (obligatorio)</label>
+              <input id="storyEs" maxlength="90" placeholder="Ej: El conejito salta en el jardín 🐰">
+            </div>
+            <div class="field">
+              <label>3 · Escríbelo en inglés (opcional, pero ¡mágico! ✨)</label>
+              <input id="storyEn" maxlength="90" placeholder="Ej: The bunny jumps in the garden">
+            </div>
+            <div class="form-btns">
+              <button class="btn" id="storyPreview">🔊 Probar</button>
+              <button class="btn warm" id="storySave">💾 Guardar</button>
+              <button class="btn small" id="storyCancel" style="display:none">✖ Cancelar edición</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="page-title" style="font-size:1.4rem">📚 Nuestros cuentos y juegos</div>
+          <p class="page-sub">▶ escuchar · 🎤 reto de pronunciación · ✏️ editar · 🗑 borrar · Los cuentos con inglés
+            entran al 🏆 Reto</p>
+          <div class="story-list" id="storyList"></div>
+          <div class="form-btns" style="margin-top:16px">
+            <button class="btn small" id="exportBtn">📤 Exportar respaldo</button>
+            <button class="btn small" id="importBtn">📥 Importar</button>
+            <input type="file" id="importFile" accept="application/json" style="display:none">
+          </div>
+        </div>
+      </section>
+
+      <!-- QUIZ -->
+      <section class="page" data-page="quiz">
+        <div class="card">
+          <div class="page-title">🏆 Reto en Familia · <span style="color:var(--sun)">Family Challenge</span></div>
+          <p class="page-sub" id="quizPrompt">Lumi dirá una palabra… ¡tócala!</p>
+          <div class="tile-grid" id="quizGrid"></div>
+          <div style="margin-top:16px;text-align:center">
+            <button class="btn warm" id="quizNext">🎲 Otra ronda · Next round</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 👩‍👩‍👧 GUÍA (NUEVO) -->
+      <section class="page" data-page="guia">
+        <div class="card">
+          <div class="page-title">👩‍👧 Guía para mamá · <span style="color:var(--mint)">Mom's Guide</span></div>
+          <p class="page-sub">Recomendaciones para aprovechar LumiBook juntas</p>
+          <div class="tip-grid">
+            <div class="tip"><b>⏱️ Sesiones cortas</b>5–10 minutos al día valen más que 1 hora una vez por semana. La
+              atención a los 5 años es breve y valiosa.</div>
+            <div class="tip"><b>🎉 Celebra, no corrijas duro</b>Lumi ya repite despacio cuando hay error. Tú agrega
+              abrazos y risas: la emoción fija la memoria.</div>
+            <div class="tip"><b>✏️ Cuentos de su mundo</b>Creen cuentos con SU vida: su mascota, su juguete favorito, su
+              nombre. El inglés se vuelve personal.</div>
+            <div class="tip"><b>🔁 Repite en la semana</b>Vuelvan al mismo cuento 3 o 4 días seguidos. La repetición con
+              cariño es la clave del vocabulario.</div>
+            <div class="tip"><b>👧 Ella lidera</b>Deja que tu hija elija la página y el ritmo. El juego funciona cuando
+              ella siente el control.</div>
+            <div class="tip"><b>📤 Respaldo familiar</b>Usa "Exportar respaldo" para guardar sus cuentos y compartirlos
+              con la abuela o el profe.</div>
+            <div class="tip"><b>🎤 Micrófono</b>En tablet/PC usa Chrome para el reto de voz. Si el micro no está
+              disponible, aparece el "Modo mamá" para que tú califiques. 💛</div>
+            <div class="tip"><b>🏆 El Reto incluye sus cuentos</b>Todo lo que creen en el Taller (con inglés) aparece
+              automáticamente en el juego del Reto.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FINAL -->
+      <section class="page" data-page="final">
+        <div class="card" style="text-align:center">
+          <div class="page-title">🎉 ¡Lo lograron! · <span style="color:var(--grape)">You did it!</span></div>
+          <p class="page-sub">Estrellas ganadas · <i>Stars earned</i>: <b id="finalStars" style="color:#b07900">0 ⭐</b>
+          </p>
+          <img
+            src="https://image.qwenlm.ai/public_source/485c3eca-778f-4e94-97e3-bf4a0aa0f465/17a2fe029-412b-4693-9c5a-9beebe3c731e.png"
+            alt="Mamá e hijo celebrando"
+            style="margin:0 auto 20px;border-radius:24px;max-height:320px;object-fit:cover;box-shadow:var(--shadow)">
+          <button class="btn warm" id="restartBtn">🔁 Jugar de nuevo · Play again</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- AVATAR LUMI -->
+  <div class="avatar-dock">
+    <div class="bubble" id="bubble"></div>
+    <div class="holder">
+      <div class="avatar st-idle" id="avatar" aria-label="Avatar Lumi">
+        <svg viewBox="0 0 200 200" width="100%" height="100%">
+          <defs>
+            <radialGradient id="gBody" cx="35%" cy="30%" r="80%">
+              <stop offset="0%" stop-color="#b8f4ff" />
+              <stop offset="55%" stop-color="#4cc9f0" />
+              <stop offset="100%" stop-color="#3aa7e8" />
+            </radialGradient>
+            <linearGradient id="gStar" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#ffe08a" />
+              <stop offset="100%" stop-color="#ffc75f" />
+            </linearGradient>
+          </defs>
+          <circle class="av-ring" cx="100" cy="100" r="88" />
+          <g class="av-body-g">
+            <line x1="100" y1="38" x2="100" y2="20" stroke="#3aa7e8" stroke-width="5" stroke-linecap="round" />
+            <path d="M100 4 l5 10 11 1.5 -8 7.8 1.9 11 -9.9-5.2 -9.9 5.2 1.9-11 -8-7.8 11-1.5 z" fill="url(#gStar)" />
+            <path class="arm-l" d="M38 120 q-16 6 -14 20 q2 10 14 8" fill="none" stroke="#3aa7e8" stroke-width="12"
+              stroke-linecap="round" />
+            <path class="arm-r" d="M162 120 q16 6 14 20 q-2 10 -14 8" fill="none" stroke="#3aa7e8" stroke-width="12"
+              stroke-linecap="round" />
+            <circle cx="100" cy="108" r="70" fill="url(#gBody)" />
+            <ellipse cx="66" cy="122" rx="11" ry="7" fill="#ff8fab" opacity=".65" />
+            <ellipse cx="134" cy="122" rx="11" ry="7" fill="#ff8fab" opacity=".65" />
+            <g class="av-eyes-open">
+              <circle cx="76" cy="98" r="10" fill="#2d2a4a" />
+              <circle cx="124" cy="98" r="10" fill="#2d2a4a" />
+              <circle cx="79" cy="94" r="3.5" fill="#fff" />
+              <circle cx="127" cy="94" r="3.5" fill="#fff" />
+            </g>
+            <g class="av-eyes-happy">
+              <path d="M66 98 q10 -12 20 0" fill="none" stroke="#2d2a4a" stroke-width="6" stroke-linecap="round" />
+              <path d="M114 98 q10 -12 20 0" fill="none" stroke="#2d2a4a" stroke-width="6" stroke-linecap="round" />
+            </g>
+            <path class="m-smile" d="M86 124 q14 12 28 0" fill="none" stroke="#2d2a4a" stroke-width="6"
+              stroke-linecap="round" />
+            <ellipse class="m-talk" cx="100" cy="130" rx="11" ry="13" fill="#2d2a4a" />
+            <path class="m-big" d="M78 122 q22 30 44 0 q-22 10 -44 0 z" fill="#2d2a4a" />
+            <path class="m-big" d="M90 134 q10 8 20 0 q-10 -4 -20 0 z" fill="#ff8fab" />
+          </g>
+        </svg>
+      </div>
+      <div class="av-name">Lumi ✨</div>
+    </div>
+  </div>
+
+  <!-- MODAL MODO MAMÁ -->
+  <div class="modal" id="mamaModal">
+    <div class="modal-card">
+      <h3>👩👧 Turno de mamá</h3>
+      <p id="mamaText">Mamá, ¿cómo dijo la palabra?</p>
+      <div class="modal-btns">
+        <button class="btn" id="mamaOk">✅ ¡La dijo bien!</button>
+        <button class="btn warm" id="mamaRetry">🔁 Otra vez juntas</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ═══════════════════════════════════════════════════════════════
+       LumiBook v2 · Arquitectura modular
+       SoundEngine · Speech · Recognizer · Avatar · Confetti · Progress
+       Challenge · Drawing · Pages · Quiz · Stories (NUEVO: taller)
+    ═══════════════════════════════════════════════════════════════ */
+    'use strict';
+    const $ = s => document.querySelector(s);
+    const pick = a => a[Math.floor(Math.random() * a.length)];
+
+    /* ---------- SONIDO (Web Audio, latencia ~0) ---------- */
+    const SoundEngine = (() => {
+      let ctx = null, sfxGain = null, musicGain = null, noiseBuf = null;
+      let musicOn = true, sfxOn = true, timer = null, nextT = 0, step = 0;
+      const MELODY = [523.25, 0, 659.25, 783.99, 0, 880, 783.99, 0, 659.25, 0, 523.25, 587.33, 659.25, 0, 783.99, 0];
+      function init() {
+        if (ctx) return;
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        sfxGain = ctx.createGain(); sfxGain.gain.value = .9; sfxGain.connect(ctx.destination);
+        musicGain = ctx.createGain(); musicGain.gain.value = .14; musicGain.connect(ctx.destination);
+        noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 0.25, ctx.sampleRate);
+        const d = noiseBuf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      function now() { return ctx.currentTime; }
+      function tone(freq, t0, dur, type, vol, dest) {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = type || 'sine'; o.frequency.value = freq;
+        g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(vol || .5, t0 + .02);
+        g.gain.exponentialRampToValueAtTime(.001, t0 + dur);
+        o.connect(g); g.connect(dest || sfxGain); o.start(t0); o.stop(t0 + dur + .05);
+      }
+      return {
+        init,
+        unlock() { init(); if (ctx.state === 'suspended') ctx.resume(); this.music(musicOn); },
+        pop() {
+          if (!ctx || !sfxOn) return; const o = ctx.createOscillator(), g = ctx.createGain();
+          o.frequency.setValueAtTime(520, now()); o.frequency.exponentialRampToValueAtTime(160, now() + .12);
+          g.gain.setValueAtTime(.5, now()); g.gain.exponentialRampToValueAtTime(.001, now() + .14);
+          o.connect(g); g.connect(sfxGain); o.start(); o.stop(now() + .16);
+        },
+        click() { if (ctx && sfxOn) tone(880, now(), .07, 'triangle', .3); },
+        sparkle() { if (!ctx || !sfxOn) return;[1318, 1760, 2093].forEach((f, i) => tone(f, now() + i * .07, .18, 'sine', .3)); },
+        correct() { if (!ctx || !sfxOn) return;[523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, now() + i * .09, .35, 'triangle', .45)); this.sparkle(); },
+        gentleNo() { if (!ctx || !sfxOn) return; tone(392, now(), .25, 'sine', .3); tone(329.63, now() + .22, .35, 'sine', .3); },
+        applause() {
+          if (!ctx || !sfxOn) return;
+          for (let i = 0; i < 16; i++) {
+            const t = now() + Math.random() * 1.1;
+            const s = ctx.createBufferSource(); s.buffer = noiseBuf;
+            const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1400 + Math.random() * 2200;
+            const g = ctx.createGain(); g.gain.setValueAtTime(.5, t); g.gain.exponentialRampToValueAtTime(.001, t + .07);
+            s.connect(f); f.connect(g); g.connect(sfxGain); s.start(t); s.stop(t + .09);
+          }
+        },
+        music(on) {
+          musicOn = on;
+          if (!ctx) return;
+          if (on && !timer) {
+            nextT = now() + .1; step = 0;
+            timer = setInterval(() => {
+              while (nextT < now() + .6) {
+                const n = MELODY[step % 16];
+                if (n) tone(n, nextT, .5, 'triangle', .5, musicGain);
+                if (step % 8 === 0) tone(step % 16 === 0 ? 261.63 : 196, nextT, 1.1, 'sine', .4, musicGain);
+                nextT += .34; step++;
+              }
+            }, 200);
+          } else if (!on && timer) { clearInterval(timer); timer = null; }
+        },
+        sfx(on) { sfxOn = on; },
+        get isMusic() { return musicOn; }, get isSfx() { return sfxOn; }
+      };
+    })();
+
+    /* ---------- VOZ (TTS bilingüe) ---------- */
+    const Speech = (() => {
+      const supported = 'speechSynthesis' in window;
+      function voiceFor(lang) {
+        if (!supported) return null;
+        const vs = speechSynthesis.getVoices();
+        const code = lang.slice(0, 2);
+        const m = vs.filter(v => v.lang.replace('_', '-').toLowerCase().startsWith(code));
+        return m.find(v => /google|natural|neural|premium/i.test(v.name)) || m[0] || null;
+      }
+      if (supported) speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+      function speak(text, lang, opts = {}) {
+        if (!supported) { opts.onend && opts.onend(); return; }
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = lang; u.rate = opts.rate || .85; u.pitch = opts.pitch || 1.15;
+        const v = voiceFor(lang); if (v) u.voice = v;
+        u.onend = () => opts.onend && opts.onend();
+        u.onerror = () => opts.onend && opts.onend();
+        speechSynthesis.speak(u);
+      }
+      return {
+        supported,
+        es(t, cb, slow) { speak(t, 'es-ES', { rate: slow ? .6 : .9, onend: cb }); },
+        en(t, cb, slow) { speak(t, 'en-US', { rate: slow ? .5 : .8, pitch: 1.1, onend: cb }); },
+        bilingual(esT, enT, cb) { this.es(esT, () => this.en(enT, cb)); },
+        stop() { if (supported) speechSynthesis.cancel(); }
+      };
+    })();
+
+    /* ---------- RECONOCIMIENTO DE VOZ ---------- */
+    const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9áéíóúñü\s']/g, '').replace(/\s+/g, ' ').trim();
+    function lev(a, b) {
+      const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
+      const d = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+      for (let j = 0; j <= n; j++) d[0][j] = j;
+      for (let i = 1; i <= m; i++)for (let j = 1; j <= n; j++)
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      return d[m][n];
+    }
+    const Recognizer = (() => {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      return {
+        available: !!SR,
+        listen(target, onOk, onNo) {
+          if (!SR) return false;
+          const rec = new SR(); rec.lang = 'en-US'; rec.maxAlternatives = 6; rec.interimResults = false;
+          let done = false;
+          const finish = fn => { if (done) return; done = true; clearTimeout(to); try { rec.abort() } catch (e) { } fn(); };
+          const to = setTimeout(() => finish(() => onNo('timeout')), 8000);
+          rec.onresult = e => finish(() => {
+            const alts = Array.from(e.results[0]).map(a => norm(a.transcript));
+            const t = norm(target);
+            const tol = Math.max(1, Math.floor(t.length / 4));
+            const ok = alts.some(a => a === t || a.includes(t) || t.includes(a) || lev(a, t) <= tol);
+            ok ? onOk() : onNo(alts[0] || '');
+          });
+          rec.onerror = e => finish(() => onNo(e.error));
+          rec.onend = () => finish(() => onNo('timeout'));
+          try { rec.start(); } catch (e) { return false; }
+          return true;
+        }
+      };
+    })();
+
+    /* ---------- AVATAR ---------- */
+    const Avatar = (() => {
+      const el = $('#avatar'), bubble = $('#bubble'); let bT = null, sT = null;
+      function setState(st, ms) {
+        el.className = 'avatar st-' + st;
+        if (sT) clearTimeout(sT);
+        if (ms) sT = setTimeout(() => { el.className = 'avatar st-idle'; }, ms);
+      }
+      function say(html, ms = 3600) {
+        bubble.innerHTML = html; bubble.classList.add('show');
+        if (bT) clearTimeout(bT); bT = setTimeout(() => bubble.classList.remove('show'), ms);
+      }
+      return {
+        setState, say, hide() { bubble.classList.remove('show'); },
+        celebrate(msg) {
+          setState('happy', 2200); SoundEngine.correct(); SoundEngine.applause(); Confetti.burst();
+          say(msg || pick(['¡Excelente! 🌟', '¡Súper! 🎉', '¡Eres increíble! 💖', '¡Amazing! ✨', '¡Lo lograste! 🏆']));
+        },
+        talkWhile(text, lang, cb, slow) {
+          setState(slow ? 'slow' : 'talk');
+          (lang === 'es' ? Speech.es : Speech.en).call(Speech, text, () => { setState('idle'); cb && cb(); }, slow);
+        }
+      };
+    })();
+
+    /* ---------- CONFETTI ---------- */
+    const Confetti = (() => {
+      const cv = $('#fxCanvas'), cx = cv.getContext('2d'); let P = [], run = false;
+      const COLORS = ['#ff6f91', '#ffc75f', '#2ec4b6', '#4cc9f0', '#9b5de5', '#ff8fab'];
+      function fit() { cv.width = innerWidth; cv.height = innerHeight; }
+      addEventListener('resize', fit); fit();
+      function loop() {
+        if (!P.length) { run = false; cx.clearRect(0, 0, cv.width, cv.height); return; } run = true;
+        cx.clearRect(0, 0, cv.width, cv.height);
+        P = P.filter(p => p.y < cv.height + 30);
+        P.forEach(p => {
+          p.x += p.vx; p.y += p.vy; p.vy += .12; p.rot += p.vr;
+          cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot); cx.fillStyle = p.c;
+          cx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * .6); cx.restore();
+        });
+        requestAnimationFrame(loop);
+      }
+      function spawn(n, x, y, spread) {
+        for (let i = 0; i < n; i++) P.push({
+          x: x ?? Math.random() * cv.width, y: y ?? -20, vx: (Math.random() - .5) * spread, vy: Math.random() * -6 - 2,
+          s: 6 + Math.random() * 8, c: pick(COLORS), rot: Math.random() * 6, vr: (Math.random() - .5) * .3
+        });
+        if (!run) loop();
+      }
+      return { burst() { spawn(90, innerWidth / 2, innerHeight * .55, 9); }, rain() { spawn(140); setTimeout(() => spawn(100), 700); } };
+    })();
+
+    /* ---------- PROGRESO ---------- */
+    const Progress = (() => {
+      let stars = +(localStorage.getItem('lumibook_stars') || 0);
+      const box = $('#starBox'), cnt = $('#starCount');
+      function paint() { cnt.textContent = stars; box.classList.remove('pop'); void box.offsetWidth; box.classList.add('pop'); }
+      paint();
+      return {
+        add() { stars++; localStorage.setItem('lumibook_stars', stars); paint(); SoundEngine.sparkle(); },
+        get value() { return stars; }, reset() { stars = 0; localStorage.setItem('lumibook_stars', 0); paint(); }
+      };
+    })();
+
+    /* ---------- RETO FONÉTICO (admite palabra o frase) ---------- */
+    const Challenge = (() => {
+      let busy = false;
+      const PRAISE = ['¡Muy bien! 👏', '¡Excelente! 🌟', '¡Súper equipo! 💖', '¡Amazing! ✨'];
+      function slowCorrection(target, then) {
+        Avatar.setState('enc');
+        const spoken = target.length > 14 ? target : target.split(' ').map(w => w.split('').join(' · ')).join('  ');
+        Avatar.say(`¡Casi! 🐢 Escucha mi boca:<span class="big-word">${spoken}</span>Inténtalo de nuevo con mamá 💕`, 6000);
+        Speech.en(`Almost! Watch my mouth. ${target}. ${target}. Try again with mommy!`, () => then && then(), true);
+      }
+      function startListen(target, attempt, onWin) {
+        Avatar.setState('listen');
+        Avatar.say(`🎤 Te escucho… di en inglés:<span class="big-word">${target}</span>`);
+        const started = Recognizer.listen(target,
+          () => { busy = false; Progress.add(); Avatar.celebrate(`${pick(PRAISE)}<span class="big-word">${target} ✔</span>`); onWin && onWin(true); },
+          () => {
+            if (attempt < 2) { slowCorrection(target, () => startListen(target, attempt + 1, onWin)); }
+            else { busy = false; mamaJudge(target, onWin); }
+          }
+        );
+        if (!started) mamaJudge(target, onWin);
+      }
+      function mamaJudge(target, onWin) {
+        $('#mamaText').innerHTML = `Mamá, ¿cómo dijo <b style="color:var(--grape)">"${target}"</b>?`;
+        $('#mamaModal').classList.add('show');
+        const clean = () => $('#mamaModal').classList.remove('show');
+        $('#mamaOk').onclick = () => {
+          clean(); Progress.add();
+          Avatar.celebrate(`${pick(PRAISE)}<span class="big-word">${target} ✔</span>`); onWin && onWin(true);
+        };
+        $('#mamaRetry').onclick = () => { clean(); slowCorrection(target, () => startListen(target, 0, onWin)); };
+      }
+      return {
+        start(target, onWin) {
+          if (busy) return; busy = true;
+          SoundEngine.pop();
+          Avatar.talkWhile(`Say it in English: ${target}! 🎤`, 'en', () => startListen(target, 0, onWin));
+        },
+        get busy() { return busy; }
+      };
+    })();
+
+    /* ---------- CONTENIDO ---------- */
+    const DATA = {
+      colors: [
+        { hex: '#ff5d73', en: 'Red', es: 'Rojo' }, { hex: '#ffc75f', en: 'Yellow', es: 'Amarillo' },
+        { hex: '#2ec4b6', en: 'Green', es: 'Verde' }, { hex: '#4cc9f0', en: 'Blue', es: 'Azul' },
+        { hex: '#9b5de5', en: 'Purple', es: 'Morado' }, { hex: '#ff8fab', en: 'Pink', es: 'Rosa' },
+        { hex: '#f77f00', en: 'Orange', es: 'Naranja' }, { hex: '#8d6e63', en: 'Brown', es: 'Marrón' }
+      ],
+      animals: [
+        { emo: '🐱', en: 'Cat', es: 'Gato' }, { emo: '🐶', en: 'Dog', es: 'Perro' },
+        { emo: '🐰', en: 'Rabbit', es: 'Conejo' }, { emo: '🐻', en: 'Bear', es: 'Oso' },
+        { emo: '🐘', en: 'Elephant', es: 'Elefante' }, { emo: '🐵', en: 'Monkey', es: 'Mono' },
+        { emo: '🐦', en: 'Bird', es: 'Pájaro' }, { emo: '🐟', en: 'Fish', es: 'Pez' }
+      ],
+      numbers: [
+        { emo: '1️⃣', en: 'One', es: 'Uno' }, { emo: '2️⃣', en: 'Two', es: 'Dos' }, { emo: '3️⃣', en: 'Three', es: 'Tres' },
+        { emo: '4️⃣', en: 'Four', es: 'Cuatro' }, { emo: '5️⃣', en: 'Five', es: 'Cinco' }, { emo: '6️⃣', en: 'Six', es: 'Seis' },
+        { emo: '7️⃣', en: 'Seven', es: 'Siete' }, { emo: '8️⃣', en: 'Eight', es: 'Ocho' }, { emo: '9️⃣', en: 'Nine', es: 'Nueve' }, { emo: '🔟', en: 'Ten', es: 'Diez' }
+      ],
+      family: [
+        { emo: '👩', en: 'Mom', es: 'Mamá' }, { emo: '👨', en: 'Dad', es: 'Papá' },
+        { emo: '👧', en: 'Sister', es: 'Hermana' }, { emo: '👦', en: 'Brother', es: 'Hermano' },
+        { emo: '👵', en: 'Grandma', es: 'Abuela' }, { emo: '👴', en: 'Grandpa', es: 'Abuelo' },
+        { emo: '👶', en: 'Baby', es: 'Bebé' }, { emo: '🏠', en: 'Family', es: 'Familia' }
+      ],
+      food: [
+        { emo: '🍎', en: 'Apple', es: 'Manzana' }, { emo: '🍌', en: 'Banana', es: 'Plátano' },
+        { emo: '🥛', en: 'Milk', es: 'Leche' }, { emo: '🍞', en: 'Bread', es: 'Pan' },
+        { emo: '🧀', en: 'Cheese', es: 'Queso' }, { emo: '🥚', en: 'Egg', es: 'Huevo' },
+        { emo: '💧', en: 'Water', es: 'Agua' }, { emo: '🧃', en: 'Juice', es: 'Jugo' }
+      ],
+      phrases: [
+        { emo: '👋', en: 'Hello!', es: '¡Hola!' }, { emo: '🌅', en: 'Good morning', es: 'Buenos días' },
+        { emo: '🙏', en: 'Thank you', es: 'Gracias' }, { emo: '🥰', en: 'I love you', es: 'Te quiero' },
+        { emo: '❓', en: 'How are you?', es: '¿Cómo estás?' }, { emo: '🎈', en: 'Please', es: 'Por favor' },
+        { emo: '🌙', en: 'Goodbye!', es: '¡Adiós!' }, { emo: '🌟', en: 'Great job!', es: '¡Muy bien hecho!' }
+      ]
+    };
+    const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const ALPHA_ES = { A: 'A', B: 'Be', C: 'Ce', D: 'De', E: 'E', F: 'Efe', G: 'Ge', H: 'Hache', I: 'I', J: 'Jota', K: 'Ka', L: 'Ele', M: 'Eme', N: 'Ene', O: 'O', P: 'Pe', Q: 'Cu', R: 'Ere', S: 'Ese', T: 'Te', U: 'U', V: 'Uve', W: 'Doble uve', X: 'Equis', Y: 'Ye', Z: 'Zeta' };
+    const ALPHA_HUES = ['#ff6f91', '#ffc75f', '#2ec4b6', '#4cc9f0', '#9b5de5'];
+
+    /* ---------- RENDER DE TARJETAS ---------- */
+    function renderTiles(container, items, withMic) {
+      container.innerHTML = '';
+      items.forEach(it => {
+        const t = document.createElement('div'); t.className = 'tile';
+        const emoHTML = it.hex
+          ? `<span class="emo" style="width:52px;height:52px;border-radius:50%;background:${it.hex};border:4px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.18);display:inline-block"></span>`
+          : `<span class="emo">${it.emo || '🎨'}</span>`;
+        t.innerHTML = `${emoHTML}<span class="t-en">${it.en}</span><span class="t-es">${it.es}</span>${withMic ? '<button class="mic">🎤</button>' : ''}`;
+        t.addEventListener('click', e => {
+          if (e.target.closest('.mic')) { Challenge.start(it.en); return; }
+          SoundEngine.pop(); Speech.bilingual(it.es, it.en);
+          Avatar.setState('talk', 1600);
+          t.classList.remove('correct'); void t.offsetWidth; t.classList.add('correct');
+          setTimeout(() => t.classList.remove('correct'), 700);
+        });
+        container.appendChild(t);
+      });
+    }
+
+    /* ---------- ✏️ TALLER: CUENTOS PROPIOS (NUEVO MÓDULO) ---------- */
+    const Stories = (() => {
+      const KEY = 'lumibook_creaciones';
+      const EMOJIS = ['🌟', '🐰', '🌈', '🦄', '🏰', '🚀', '🐢', '🌸', '🧸', '🍭', '👑', '🐬'];
+      let items = []; try { items = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { items = []; }
+      let selEmoji = '🌟', editId = null;
+      const list = $('#storyList'), row = $('#emojiRow');
+      const save = () => localStorage.setItem(KEY, JSON.stringify(items));
+      const esc = s => s.replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+
+      EMOJIS.forEach(e => {
+        const b = document.createElement('button'); b.className = 'emo-pick'; b.textContent = e;
+        if (e === selEmoji) b.classList.add('sel');
+        b.onclick = () => {
+          selEmoji = e; row.querySelectorAll('.emo-pick').forEach(x => x.classList.remove('sel'));
+          b.classList.add('sel'); SoundEngine.click();
+        };
+        row.appendChild(b);
+      });
+
+      function playStory(s) {
+        Avatar.say(`<span class="big-word">${s.emo} ${esc(s.es)}</span>`, 5200);
+        Avatar.setState('talk');
+        Speech.es(s.es, () => {
+          if (s.en) {
+            Avatar.setState('talk');
+            Avatar.say(`🇺🇸 In English:<span class="big-word">${esc(s.en)}</span>`, 5200);
+            Speech.en(s.en, () => Avatar.setState('idle'));
+          } else {
+            Avatar.setState('idle');
+            Avatar.say('💡 ¡Agreguen el inglés en el taller para que Lumi lo repita! ✏️', 4200);
+          }
+        });
+      }
+
+      function paintList() {
+        list.innerHTML = '';
+        if (!items.length) {
+          list.innerHTML = '<div class="empty-msg">📖 Aún no hay cuentos… ¡Creen el primero arriba! ✏️<br><i>No stories yet… create your first one!</i></div>';
+          return;
+        }
+        items.forEach(s => {
+          const c = document.createElement('div'); c.className = 'story-card';
+          c.innerHTML = `
+        <span class="s-emo">${s.emo}</span>
+        <div class="s-texts">
+          <span class="s-es">${esc(s.es)}</span>
+          <span class="s-en ${s.en ? '' : 'empty'}">${s.en ? esc(s.en) : '— falta el inglés (opcional) —'}</span>
+        </div>
+        <div class="s-actions">
+          <button class="mini-btn" data-a="play" title="Escuchar">▶</button>
+          <button class="mini-btn" data-a="mic" title="Reto de pronunciación" ${s.en ? '' : 'style="opacity:.35"'}>🎤</button>
+          <button class="mini-btn" data-a="edit" title="Editar">✏️</button>
+          <button class="mini-btn" data-a="del" title="Borrar">🗑</button>
+        </div>`;
+          c.querySelector('[data-a=play]').onclick = () => { SoundEngine.pop(); playStory(s); };
+          c.querySelector('[data-a=mic]').onclick = () => {
+            if (!s.en) { Avatar.say('✏️ Primero escriban el inglés de este cuento en el taller 💛', 3600); return; }
+            Challenge.start(s.en);
+          };
+          c.querySelector('[data-a=edit]').onclick = () => {
+            editId = s.id; $('#storyEs').value = s.es; $('#storyEn').value = s.en || '';
+            selEmoji = s.emo; row.querySelectorAll('.emo-pick').forEach(x => x.classList.toggle('sel', x.textContent === s.emo));
+            $('#storyCancel').style.display = 'inline-block';
+            $('#storySave').textContent = '💾 Actualizar';
+            Avatar.say('✏️ Editando el cuento… ¡cambien lo que quieran!', 3200);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          };
+          c.querySelector('[data-a=del]').onclick = () => {
+            if (confirm('¿Borrar este cuento? 🗑')) {
+              items = items.filter(x => x.id !== s.id); save(); paintList(); SoundEngine.pop();
+              Avatar.say('🗑 Cuento borrado. ¡Pueden crear uno nuevo! ✨', 3000);
+            }
+          };
+          list.appendChild(c);
+        });
+      }
+
+      $('#storyPreview').onclick = () => {
+        const es = $('#storyEs').value.trim(), en = $('#storyEn').value.trim();
+        if (!es) { Avatar.say('✏️ Escriban algo en español primero 💛', 3000); return; }
+        playStory({ emo: selEmoji, es, en });
+      };
+      $('#storySave').onclick = () => {
+        const es = $('#storyEs').value.trim(), en = $('#storyEn').value.trim();
+        if (!es) { Avatar.say('✏️ Falta el español del cuento 💛', 3200); SoundEngine.gentleNo(); return; }
+        if (editId) { const s = items.find(x => x.id === editId); if (s) { s.es = es; s.en = en; s.emo = selEmoji; } editId = null; }
+        else items.unshift({ id: Date.now(), emo: selEmoji, es, en });
+        save(); paintList();
+        $('#storyEs').value = ''; $('#storyEn').value = '';
+        $('#storyCancel').style.display = 'none'; $('#storySave').textContent = '💾 Guardar';
+        SoundEngine.correct(); Confetti.burst();
+        Avatar.celebrate('📚 ¡Cuento guardado! ¡Qué gran equipo! 💕');
+        Speech.bilingual('¡Cuento guardado!', 'Story saved! Great team!');
+      };
+      $('#storyCancel').onclick = () => {
+        editId = null; $('#storyEs').value = ''; $('#storyEn').value = '';
+        $('#storyCancel').style.display = 'none'; $('#storySave').textContent = '💾 Guardar';
+      };
+      $('#exportBtn').onclick = () => {
+        const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = 'lumibook-nuestros-cuentos.json'; a.click(); SoundEngine.sparkle();
+        Avatar.say('📤 ¡Respaldo descargado! Guárdenlo con cariño 💛', 3200);
+      };
+      $('#importBtn').onclick = () => $('#importFile').click();
+      $('#importFile').onchange = e => {
+        const f = e.target.files[0]; if (!f) return;
+        const r = new FileReader();
+        r.onload = () => {
+          try {
+            const data = JSON.parse(r.result);
+            if (Array.isArray(data)) {
+              items = data.concat(items.filter(x => !data.some(d => d.id === x.id)));
+              save(); paintList(); Avatar.celebrate('📥 ¡Cuentos importados!');
+            }
+          } catch (err) { Avatar.say('😅 Ese archivo no parece un respaldo de LumiBook', 3400); }
+        };
+        r.readAsText(f); e.target.value = '';
+      };
+
+      paintList();
+      return { get items() { return items; }, playStory };
+    })();
+
+    /* ---------- DIBUJO ---------- */
+    const Drawing = (() => {
+      const cv = $('#drawCanvas'), cx = cv.getContext('2d');
+      let drawing = false, color = DATA.colors[3].hex, size = 8, fitted = false;
+      function fit() {
+        const r = cv.parentElement.getBoundingClientRect(); if (r.width < 10) return;
+        const d = Math.min(2, devicePixelRatio || 1);
+        const old = document.createElement('canvas'); old.width = cv.width; old.height = cv.height;
+        if (old.width > 2) old.getContext('2d').drawImage(cv, 0, 0);
+        cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d);
+        cx.setTransform(d, 0, 0, d, 0, 0); cx.lineCap = 'round'; cx.lineJoin = 'round';
+        if (old.width > 2) cx.drawImage(old, 0, 0, old.width, old.height, 0, 0, r.width, r.height);
+        cx.strokeStyle = color; cx.lineWidth = size; fitted = true;
+      }
+      addEventListener('resize', () => fit());
+      function pos(e) { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+      cv.addEventListener('pointerdown', e => {
+        e.preventDefault(); cv.setPointerCapture(e.pointerId);
+        drawing = true; const p = pos(e); cx.beginPath(); cx.moveTo(p.x, p.y); cx.lineTo(p.x + .1, p.y + .1); cx.stroke(); SoundEngine.click();
+      });
+      cv.addEventListener('pointermove', e => { if (!drawing) return; const p = pos(e); cx.lineTo(p.x, p.y); cx.stroke(); });
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => cv.addEventListener(ev, () => drawing = false));
+      return {
+        fit, get fitted() { return fitted; },
+        setColor(c) { color = c; cx.strokeStyle = c; },
+        setSize(s) { size = s; cx.lineWidth = s; },
+        clear() { cx.save(); cx.setTransform(1, 0, 0, 1, 0, 0); cx.clearRect(0, 0, cv.width, cv.height); cx.restore(); SoundEngine.pop(); },
+        save() {
+          const t = document.createElement('canvas'); t.width = cv.width; t.height = cv.height;
+          const tc = t.getContext('2d'); tc.fillStyle = '#fff'; tc.fillRect(0, 0, t.width, t.height); tc.drawImage(cv, 0, 0);
+          const a = document.createElement('a'); a.download = 'mi-dibujo-lumibook.png'; a.href = t.toDataURL('image/png'); a.click();
+          Avatar.celebrate('💾 ¡Obra de arte guardada! 🎨');
+        }
+      };
+    })();
+
+    /* ---------- PÁGINAS ---------- */
+    const PAGES = [
+      { id: 'home', ico: '🏠', label: 'Inicio' },
+      { id: 'abc', ico: '🔤', label: 'ABC' },
+      { id: 'colors', ico: '🌈', label: 'Colores' },
+      { id: 'paint', ico: '🎨', label: 'Pintar' },
+      { id: 'animals', ico: '🐾', label: 'Animales' },
+      { id: 'numbers', ico: '🔢', label: 'Números' },
+      { id: 'family', ico: '👨‍👩‍', label: 'Familia' },
+      { id: 'food', ico: '🍎', label: 'Comida' },
+      { id: 'phrases', ico: '💬', label: 'Frases' },
+      { id: 'crear', ico: '✏️', label: 'Crear', special: true },
+      { id: 'quiz', ico: '🏆', label: 'Reto' },
+      { id: 'guia', ico: '👩‍👧', label: 'Guía', special: true },
+      { id: 'final', ico: '🎉', label: 'Fiesta' }
+    ];
+    const GREET = {
+      home: ['¡Hola! Soy Lumi ✨', 'Hi! I am Lumi! Let\'s play with mommy!'],
+      abc: ['Toca las letras 🔤', 'Tap the letters and listen!'],
+      colors: ['¡Qué color tan bonito! 🌈', 'What a beautiful color!'],
+      paint: ['Di el color en inglés y pinta 🖌️', 'Say the color in English, then paint!'],
+      animals: ['¡Toca un animal! 🐾', 'Tap an animal and listen!'],
+      numbers: ['¡A contar con mamá! 🔢', 'Let\'s count with mommy!'],
+      family: ['¡Tu familia te quiere! 💖', 'Your family loves you!'],
+      food: ['¡Yummy! 🍎', 'Yummy food! Tap and listen!'],
+      phrases: ['¡Frases mágicas! 💬', 'Magic phrases! Use them with mommy!'],
+      crear: ['¡Cuentos creados por ustedes! ✏️', 'Stories made by you! How exciting!'],
+      quiz: ['¡Reto en familia! 🏆', 'Family challenge! Listen and tap!'],
+      guia: ['Consejos para mamá 💛', 'Tips for mommy!'],
+      final: ['¡Lo lograron! 🎉', 'You did it! Amazing team!']
+    };
+    const Pages = (() => {
+      const nav = $('#chipNav'); let current = 'home';
+      PAGES.forEach(p => {
+        const b = document.createElement('button');
+        b.className = 'chip' + (p.special ? ' special' : ''); b.dataset.page = p.id;
+        b.innerHTML = `<span>${p.ico}</span>${p.label}`;
+        b.addEventListener('click', () => { SoundEngine.click(); show(p.id); });
+        nav.appendChild(b);
+      });
+      function show(id) {
+        current = id;
+        document.querySelectorAll('.page').forEach(s => s.classList.toggle('active', s.dataset.page === id));
+        document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.page === id));
+        if (id === 'paint' && !Drawing.fitted) setTimeout(() => Drawing.fit(), 60);
+        if (id === 'quiz') Quiz.newRound();
+        if (id === 'final') { $('#finalStars').textContent = Progress.value + ' ⭐'; Confetti.rain(); Avatar.celebrate('🎉 ¡Felicidades, equipo!'); }
+        const g = GREET[id]; if (g && id !== 'final') Avatar.talkWhile(g[0], 'es', () => Avatar.talkWhile(g[1], 'en'));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      return { show, get current() { return current; } };
+    })();
+
+    /* ---------- QUIZ (ahora incluye cuentos creados) ---------- */
+    const Quiz = (() => {
+      const base = [...DATA.animals, ...DATA.food]; let target = null;
+      function pool() {
+        const custom = Stories.items.filter(s => s.en).map(s => ({ emo: s.emo, en: s.en, es: s.es.length > 22 ? s.es.slice(0, 22) + '…' : s.es }));
+        return [...base, ...custom];
+      }
+      function newRound() {
+        const p = pool(); target = pick(p);
+        const opts = [target];
+        let guard = 0;
+        while (opts.length < Math.min(4, p.length) && guard++ < 40) { const c = pick(p); if (!opts.includes(c)) opts.push(c); }
+        opts.sort(() => Math.random() - .5);
+        const hasCustom = Stories.items.some(s => s.en);
+        $('#quizPrompt').innerHTML = `🎧 Lumi dice… <b>Touch the <span style="color:var(--grape)">${target.en}</span> · ¡Toca: ${target.es.toLowerCase()}!</b>${hasCustom ? '<br><span style="font-size:.85rem">✨ ¡Incluye sus cuentos creados!</span>' : ''}`;
+        renderTiles($('#quizGrid'), opts.map(o => ({ ...o })), false);
+        $('#quizGrid').querySelectorAll('.tile').forEach((t, i) => {
+          t.onclick = e => {
+            e.stopPropagation();
+            if (opts[i] === target) {
+              t.classList.add('correct'); Progress.add();
+              Avatar.celebrate(`¡Sí! <span class="big-word">${target.en} ✔</span>`);
+              setTimeout(newRound, 2200);
+            } else {
+              t.classList.add('wrong'); SoundEngine.gentleNo();
+              Avatar.talkWhile(`Casi… escucha: ${target.en}`, 'en', () => { }, true);
+              setTimeout(() => t.classList.remove('wrong'), 600);
+            }
+          };
+        });
+        SoundEngine.pop();
+        Speech.bilingual(`Toca: ${target.es}`, `Touch the ${target.en}`);
+        Avatar.setState('talk', 1800);
+      }
+      return { newRound };
+    })();
+
+    /* ---------- INICIALIZACIÓN ---------- */
+    document.addEventListener('DOMContentLoaded', () => {
+      renderTiles($('#colorGrid'), DATA.colors, true);
+      renderTiles($('#animalGrid'), DATA.animals, true);
+      renderTiles($('#numberGrid'), DATA.numbers, true);
+      renderTiles($('#familyGrid'), DATA.family, true);
+      renderTiles($('#foodGrid'), DATA.food, true);
+      renderTiles($('#phraseGrid'), DATA.phrases, true);
+
+      const ag = $('#alphaGrid');
+      [...ALPHA].forEach((L, i) => {
+        const b = document.createElement('button'); b.className = 'alpha'; b.textContent = L;
+        b.style.background = ALPHA_HUES[i % ALPHA_HUES.length];
+        b.addEventListener('click', () => { SoundEngine.pop(); Speech.bilingual(ALPHA_ES[L], L); Avatar.setState('talk', 1400); });
+        ag.appendChild(b);
+      });
+
+      const pal = $('#paintPalette');
+      DATA.colors.forEach(c => {
+        const b = document.createElement('button'); b.className = 'pal'; b.style.background = c.hex;
+        b.title = `${c.es} / ${c.en}`;
+        b.addEventListener('click', () => {
+          const apply = () => {
+            document.querySelectorAll('.pal').forEach(x => x.classList.remove('sel'));
+            b.classList.add('sel'); Drawing.setColor(c.hex); SoundEngine.pop();
+            Avatar.talkWhile(`¡A pintar con ${c.en}! 🖌️`, 'en');
+          };
+          if ($('#freeMode').checked) { apply(); Speech.bilingual(c.es, c.en); }
+          else Challenge.start(c.en, apply);
+        });
+        pal.appendChild(b);
+      });
+
+      $('#brushThin').onclick = () => { Drawing.setSize(6); SoundEngine.click(); };
+      $('#brushThick').onclick = () => { Drawing.setSize(18); SoundEngine.click(); };
+      $('#clearBtn').onclick = () => Drawing.clear();
+      $('#saveBtn').onclick = () => Drawing.save();
+      $('#quizNext').onclick = () => { SoundEngine.click(); Quiz.newRound(); };
+      $('#goFirst').onclick = () => { SoundEngine.pop(); Pages.show('abc'); };
+      $('#goCrear').onclick = () => { SoundEngine.pop(); Pages.show('crear'); };
+      $('#restartBtn').onclick = () => { Progress.reset(); Pages.show('home'); };
+
+      $('#musicBtn').onclick = e => {
+        const on = !SoundEngine.isMusic; SoundEngine.music(on);
+        e.currentTarget.classList.toggle('off', !on); SoundEngine.click();
+      };
+      $('#sfxBtn').onclick = e => {
+        const on = !SoundEngine.isSfx; SoundEngine.sfx(on);
+        e.currentTarget.classList.toggle('off', !on); if (on) SoundEngine.click();
+      };
+
+      $('#startBtn').addEventListener('click', () => {
+        SoundEngine.unlock();
+        $('#startOverlay').style.display = 'none';
+        Pages.show('home');
+        Confetti.burst();
+      });
+
+      Pages.show('home');
+    });
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => { });
+    }
+  </script>
+</body>
+
+</html>
