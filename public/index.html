@@ -2145,6 +2145,14 @@
       });
 
       Pages.show('home');
+
+      /* Deep links: permiten que los shortcuts del manifest abran la página correcta */
+      const goHash = () => {
+        const h = location.hash.replace('#','');
+        if (h && PAGES.some(p => p.id === h)) Pages.show(h);
+      };
+      goHash();
+      window.addEventListener('hashchange', goHash);
     });
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => { });

@@ -1,27 +1,86 @@
 {
   "name": "LumiBook · Inglés-Español con mamá",
   "short_name": "LumiBook",
-  "description": "Juego bilingüe para mamá y peque",
+  "description": "Juego bilingüe para que mamás y sus hijas/os de 4-6 años aprendan inglés con avatar, retos de voz y cuentos propios.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
-  "id": "/",
   "lang": "es",
+  "dir": "ltr",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
   "background_color": "#ffe9f1",
   "theme_color": "#ff6f91",
-  "orientation": "portrait",
+  "categories": [
+    "education",
+    "games",
+    "kids",
+    "lifestyle"
+  ],
   "icons": [
     {
       "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/mobile.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "LumiBook en el móvil: colores y vocabulario bilingüe"
+    },
+    {
+      "src": "screenshots/desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "LumiBook en PC: abecedario con el avatar Lumi"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "🎨 Pintar con Lumi",
+      "short_name": "Pintar",
+      "description": "Ir al área de dibujo",
+      "url": "/#paint"
+    },
+    {
+      "name": "🏆 Reto en familia",
+      "short_name": "Reto",
+      "description": "Jugar el quiz bilingüe",
+      "url": "/#quiz"
+    },
+    {
+      "name": "✏️ Crear un cuento",
+      "short_name": "Crear",
+      "description": "Taller de cuentos propios",
+      "url": "/#crear"
     }
   ]
 }
