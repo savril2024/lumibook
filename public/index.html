@@ -1251,6 +1251,7 @@
       <div class="top-actions">
         <button class="icon-btn" id="musicBtn" title="Música / Music">🎵</button>
         <button class="icon-btn" id="sfxBtn" title="Sonidos / Sounds">🔔</button>
+        <button class="icon-btn" id="strictBtn" title="Modo de validación">💗</button>
       </div>
     </header>
 
@@ -1447,6 +1448,16 @@
               automáticamente en el juego del Reto.</div>
           </div>
         </div>
+        <div class="card" style="margin-top:18px">
+          <div class="page-title" style="font-size:1.4rem">🎤 Laboratorio del micrófono</div>
+          <p class="page-sub">Para mamá: escribe una palabra, dila en voz alta (¡o dile algo equivocado a propósito!) y comprueba que la validación es real.</p>
+          <div class="form-btns">
+            <input id="micTestWord" value="Blue" maxlength="30"
+                   style="padding:12px 16px;border-radius:16px;border:3px solid #eee6f7;font-size:1.05rem;font-weight:700">
+            <button class="btn" id="micTestBtn">🎤 Probar</button>
+          </div>
+          <div class="paint-hint" id="micTestResult" style="margin-top:12px">Resultado: —</div>
+        </div>
       </section>
 
       <!-- FINAL -->
@@ -1632,36 +1643,54 @@
       };
     })();
 
-    /* ---------- RECONOCIMIENTO DE VOZ ---------- */
-    const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9áéíóúñü\s']/g, '').replace(/\s+/g, ' ').trim();
-    function lev(a, b) {
-      const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
-      const d = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
-      for (let j = 0; j <= n; j++) d[0][j] = j;
-      for (let i = 1; i <= m; i++)for (let j = 1; j <= n; j++)
-        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    /* ---------- RECONOCIMIENTO DE VOZ (validación REAL, sin eco) ---------- */
+    const norm = s => (s||'').toLowerCase().replace(/[^a-z0-9\s']/g,'').replace(/\s+/g,' ').trim();
+    function lev(a,b){ const m=a.length,n=b.length; if(!m)return n; if(!n)return m;
+      const d=Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);
+      for(let j=0;j<=n;j++) d[0][j]=j;
+      for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)
+        d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
       return d[m][n];
     }
+    function matchTarget(transcript, target){
+      const a=norm(transcript), t=norm(target);
+      if(!a || a.length<2) return {ok:false, heard:a};          // ❌ antes: fragmentos pasaban
+      const words=a.split(' '), tWords=t.split(' ');
+      if(a===t || words.includes(t)) return {ok:true, heard:a}; // palabra completa exacta
+      if(tWords.length>1){                                       // frases: mayoría de palabras
+        const hits=tWords.filter(w=>words.some(x=>x===w||(w.length>3&&lev(x,w)<=1))).length;
+        return {ok:(hits/tWords.length)>=0.7, heard:a};
+      }
+      const d=lev(a,t);                                          // 1 palabra: distancia justa
+      const maxD = t.length<=4 ? 1 : (t.length<=8 ? 2 : 3);
+      return {ok: d<=maxD && Math.abs(a.length-t.length)<=2, heard:a};
+    }
     const Recognizer = (() => {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
       return {
         available: !!SR,
-        listen(target, onOk, onNo) {
-          if (!SR) return false;
-          const rec = new SR(); rec.lang = 'en-US'; rec.maxAlternatives = 6; rec.interimResults = false;
-          let done = false;
-          const finish = fn => { if (done) return; done = true; clearTimeout(to); try { rec.abort() } catch (e) { } fn(); };
-          const to = setTimeout(() => finish(() => onNo('timeout')), 8000);
-          rec.onresult = e => finish(() => {
-            const alts = Array.from(e.results[0]).map(a => norm(a.transcript));
-            const t = norm(target);
-            const tol = Math.max(1, Math.floor(t.length / 4));
-            const ok = alts.some(a => a === t || a.includes(t) || t.includes(a) || lev(a, t) <= tol);
-            ok ? onOk() : onNo(alts[0] || '');
+        listen(target, onOk, onNo){
+          if(!SR) return false;
+          const rec=new SR(); rec.lang='en-US'; rec.maxAlternatives=5; rec.interimResults=false;
+          let done=false;
+          const finish=fn=>{ if(done)return; done=true; clearTimeout(to); try{rec.abort()}catch(e){} fn(); };
+          const to=setTimeout(()=>finish(()=>onNo({reason:'timeout',heard:''})),8000);
+          rec.onresult=e=>finish(()=>{
+            const res=e.results[0], conf=(res&&res[0]&&res[0].confidence)||0;
+            const alts=Array.from(res).map(x=>x.transcript);
+            let best=null;
+            for(const tr of alts){ const m=matchTarget(tr,target); if(m.ok){best=m;break;} best=best||m; }
+            if(best&&best.ok&&conf>0&&conf<0.35&&norm(best.heard)!==norm(target)) best.ok=false;
+            if(best&&best.ok&&localStorage.getItem('lumibook_strict')==='1'){
+              const d=lev(norm(best.heard),norm(target));
+              if(d>(norm(target).length<=4?0:1)) best.ok=false;   // 🎯 estricto
+            }
+            if(best&&best.ok) onOk(best.heard);
+            else onNo({reason:'mismatch',heard:best?best.heard:alts[0]||''});
           });
-          rec.onerror = e => finish(() => onNo(e.error));
-          rec.onend = () => finish(() => onNo('timeout'));
-          try { rec.start(); } catch (e) { return false; }
+          rec.onerror=e=>finish(()=>onNo({reason:e.error||'error',heard:''}));
+          rec.onend=()=>finish(()=>onNo({reason:'end',heard:''}));
+          try{ rec.start(); }catch(e){ return false; }
           return true;
         }
       };
@@ -1731,45 +1760,66 @@
       };
     })();
 
-    /* ---------- RETO FONÉTICO (admite palabra o frase) ---------- */
+    /* ---------- RETO FONÉTICO (modelo → turno → validación REAL) ---------- */
     const Challenge = (() => {
-      let busy = false;
-      const PRAISE = ['¡Muy bien! 👏', '¡Excelente! 🌟', '¡Súper equipo! 💖', '¡Amazing! ✨'];
-      function slowCorrection(target, then) {
-        Avatar.setState('enc');
-        const spoken = target.length > 14 ? target : target.split(' ').map(w => w.split('').join(' · ')).join('  ');
-        Avatar.say(`¡Casi! 🐢 Escucha mi boca:<span class="big-word">${spoken}</span>Inténtalo de nuevo con mamá 💕`, 6000);
-        Speech.en(`Almost! Watch my mouth. ${target}. ${target}. Try again with mommy!`, () => then && then(), true);
-      }
-      function startListen(target, attempt, onWin) {
+      let busy=false;
+      const PRAISE=['¡Muy bien! 👏','¡Excelente! 🌟','¡Súper equipo! 💖','¡Amazing! ✨'];
+
+      function openMic(target, attempt, onWin){
         Avatar.setState('listen');
-        Avatar.say(`🎤 Te escucho… di en inglés:<span class="big-word">${target}</span>`);
-        const started = Recognizer.listen(target,
-          () => { busy = false; Progress.add(); Avatar.celebrate(`${pick(PRAISE)}<span class="big-word">${target} ✔</span>`); onWin && onWin(true); },
-          () => {
-            if (attempt < 2) { slowCorrection(target, () => startListen(target, attempt + 1, onWin)); }
-            else { busy = false; mamaJudge(target, onWin); }
-          }
-        );
-        if (!started) mamaJudge(target, onWin);
+        Avatar.say(`🎤 Te escucho… di: <span class="big-word">${target}</span>`);
+        Speech.stop();                                   // 🔇 corta el eco de Lumi
+        setTimeout(()=>{                                 // silencio anti-eco
+          const started=Recognizer.listen(target,
+            heard=>{ busy=false; Progress.add();
+              Avatar.celebrate(`${pick(PRAISE)}<span class="big-word">${target} ✔</span>`);
+              onWin&&onWin(true); },
+            info=>fail(target, info, attempt, onWin)
+          );
+          if(!started) mamaJudge(target,onWin);
+        }, 700);
       }
-      function mamaJudge(target, onWin) {
-        $('#mamaText').innerHTML = `Mamá, ¿cómo dijo <b style="color:var(--grape)">"${target}"</b>?`;
+
+      function fail(target, info, attempt, onWin){
+        const silencioso=['timeout','end','no-speech','aborted'].includes(info.reason);
+        if(silencioso){                                  // no escuchó nada ≠ pronunció mal
+          if(attempt<2){
+            SoundEngine.gentleNo();
+            Avatar.say('🙉 No te escuché… inténtalo de nuevo con mamá 💕',3000);
+            setTimeout(()=>openMic(target, attempt+1, onWin), 1000);
+          } else mamaJudge(target,onWin);
+          return;
+        }
+        // 👂 Escuchó algo DISTINTO → corrección real y visible
+        SoundEngine.gentleNo();
+        Avatar.setState('enc');
+        const spoken=target.length>14?target:target.split(' ').map(w=>w.split('').join(' · ')).join('  ');
+        Avatar.say(`Lumi escuchó: "<b>${info.heard||'…'}</b>" 🤔<br>¡Casi! Mira mi boca:<span class="big-word">${spoken}</span>`,5200);
+        Speech.en(`Almost! Watch my mouth. ${target}. ${target}. Try again with mommy!`, ()=>{
+          if(attempt<2) openMic(target, attempt+1, onWin);
+          else mamaJudge(target,onWin);
+        }, true);
+      }
+
+      function mamaJudge(target,onWin){
+        $('#mamaText').innerHTML=`Mamá, ¿cómo dijo <b style="color:var(--grape)">"${target}"</b>?`;
         $('#mamaModal').classList.add('show');
-        const clean = () => $('#mamaModal').classList.remove('show');
-        $('#mamaOk').onclick = () => {
-          clean(); Progress.add();
-          Avatar.celebrate(`${pick(PRAISE)}<span class="big-word">${target} ✔</span>`); onWin && onWin(true);
-        };
-        $('#mamaRetry').onclick = () => { clean(); slowCorrection(target, () => startListen(target, 0, onWin)); };
+        $('#mamaOk').onclick=()=>{ $('#mamaModal').classList.remove('show'); busy=false; Progress.add();
+          Avatar.celebrate(`${pick(PRAISE)}<span class="big-word">${target} ✔</span>`); onWin&&onWin(true); };
+        $('#mamaRetry').onclick=()=>{ $('#mamaModal').classList.remove('show');
+          Avatar.talkWhile(`Listen: ${target}`,'en',()=>openMic(target,0,onWin)); };
       }
+
       return {
-        start(target, onWin) {
-          if (busy) return; busy = true;
+        start(target,onWin){
+          if(busy) return; busy=true;
           SoundEngine.pop();
-          Avatar.talkWhile(`Say it in English: ${target}! 🎤`, 'en', () => startListen(target, 0, onWin));
+          // 1️⃣ modelo en inglés → 2️⃣ aviso NEUTRO en español → 3️⃣ silencio → 4️⃣ micro
+          Avatar.talkWhile(`Listen and repeat: ${target}!`,'en',()=>{
+            Avatar.talkWhile('¡Ahora tú! 🎤','es',()=>openMic(target,0,onWin));
+          });
         },
-        get busy() { return busy; }
+        get busy(){return busy;}
       };
     })();
 
@@ -2135,6 +2185,31 @@
       $('#sfxBtn').onclick = e => {
         const on = !SoundEngine.isSfx; SoundEngine.sfx(on);
         e.currentTarget.classList.toggle('off', !on); if (on) SoundEngine.click();
+      };
+
+      const strictBtn=$('#strictBtn');
+      function paintStrict(){ const on=localStorage.getItem('lumibook_strict')==='1';
+        strictBtn.textContent=on?'🎯':'💗';
+        strictBtn.title=on?'Modo estricto: validación exigente':'Modo cariño: validación amable';
+      }
+      strictBtn.onclick=()=>{ const on=localStorage.getItem('lumibook_strict')==='1';
+        localStorage.setItem('lumibook_strict', on?'0':'1'); paintStrict(); SoundEngine.click();
+        Avatar.say(on?'💗 Modo cariño: Lumi aceptará pronunciaciones cercanas'
+                     :'🎯 Modo estricto: Lumi exigirá pronunciación precisa',3600);
+      };
+      paintStrict();
+
+      $('#micTestBtn').onclick=()=>{
+        const t=$('#micTestWord').value.trim()||'Blue';
+        const out=$('#micTestResult');
+        out.innerHTML='🎧 Escuchando… di la palabra en inglés (o algo equivocado para probar)';
+        Avatar.setState('listen'); Speech.stop();
+        const started=Recognizer.listen(t,
+          heard=>{ out.innerHTML=`✅ Lumi escuchó: "<b>${heard}</b>" → VÁLIDO para "${t}"`; Avatar.celebrate(); },
+          info=>{ out.innerHTML=`❌ Lumi escuchó: "<b>${info.heard||'(nada)'}</b>" → NO válido para "${t}" <i>(${info.reason})</i>`;
+                  Avatar.setState('enc',1800); SoundEngine.gentleNo(); }
+        );
+        if(!started) out.innerHTML='⚠️ Este navegador no soporta reconocimiento de voz. Usa <b>Chrome</b> en PC o Android.';
       };
 
       $('#startBtn').addEventListener('click', () => {
